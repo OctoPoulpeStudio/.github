@@ -1,0 +1,51 @@
+name: OctoPoulpe Swift CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup SSH Keys and known_hosts
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+          ssh-private-key: |
+            ${{ secrets.MACHINE_USER }}
+    
+    - name: Get package scheme
+      id: printJson
+      run:  xcodebuild -list -json > scheme.json
+    - name: Parse Json
+      id: schemeJson
+      run: |
+          content=`cat ./scheme.json`
+          # the following lines are only required for multi line json
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/}"
+          content="${content//$'\r'/'%0D'}"
+          # end of optional handling for multi line json
+          echo "packageJson=$content" >> $GITHUB_OUTPUT
+    # print the package file in a json format
+    #- run: |
+    #    echo '${{ steps.schemeJson.outputs.packageJson }}'
+    
+    - name: get package scheme name
+      id: schemeName
+      run: echo "schemeName=${{ fromJson(steps.schemeJson.outputs.packageJson).workspace.name }}" >> $GITHUB_OUTPUT
+           
+      
+    - name: Build
+      run: swift build -v
+    #- name: Run tests
+    #  run: swift test -v
+    - name: Build iOS
+    # build on a generic iOS device
+      run: xcodebuild -scheme ${{ steps.schemeName.outputs.schemeName }} -destination 'generic/platform=iOS Simulator'
