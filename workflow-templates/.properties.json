@@ -1,0 +1,7 @@
+{
+    "name": "OctoPoulpe Swift CI",
+    "description": "Main CI for swift project compiling for iOS and macOS",
+    "categories": [
+        "Swift"
+    ],
+}
